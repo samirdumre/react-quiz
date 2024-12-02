@@ -1,9 +1,12 @@
-import { useEffect, useLayoutEffect, useReducer } from "react";
-import Error from './Error'
-import Loader from './Loader'
-import Header from "./Header";
-import Startscreen from "./StartScreen";
-import MainPortion from "./MainPortion";
+import { useEffect, useReducer } from "react";
+import Error from "./components/Error";
+import Loader from "./components/Loader";
+import Header from "./components/Header";
+import StartScreen from "./components/StartScreen";
+import MainPortion from "./components/MainPortion";
+import Questions from "./components/Questions";
+import NextButton from "./components/NextButton";
+import Progress from "./components/Progress";
 
 function App() {
   const initialState = {
@@ -11,6 +14,9 @@ function App() {
 
     // 'loading', 'error', 'ready', 'active', 'finished'
     status: "loading",
+    index: 0,
+    answer: null,
+    points: 0,
   };
 
   function reducer(state, action) {
@@ -25,13 +31,44 @@ function App() {
         return {
           ...state,
           status: "error",
-        }
+        };
+      case "start":
+        return {
+          ...state,
+          status: "active",
+        };
+      case "newAnswer":
+        const question = state.questions.at(state.index);
+
+        return {
+          ...state,
+          answer: action.payload,
+          points:
+            action.payload === question.correctOption
+              ? state.points + 1
+              : state.points,
+        };
+      case "nextQuestion":
+        return {
+          ...state,
+          index: state.index + 1,
+          answer: null,
+        };
       default:
         throw new Error("Action unknown");
     }
   }
 
-  const [{status, question}, dispatch] = useReducer(reducer, initialState);
+  const [{ status, questions, index, answer, points }, dispatch] = useReducer(
+    reducer,
+    initialState
+  );
+
+  const numQuestions = questions.length;
+  const maxPossiblePoints = questions.reduce(
+    (prev, cur) => prev + cur.points,
+    0
+  );
 
   useEffect(() => {
     async function questionsFetch() {
@@ -58,7 +95,26 @@ function App() {
       <MainPortion>
         {status === "loading" && <Loader />}
         {status === "error" && <Error />}
-        {status === "ready" && <Startscreen />}
+        {status === "ready" && (
+          <StartScreen numQuestions={numQuestions} dispatch={dispatch} />
+        )}
+        {status === "active" && (
+          <>
+            <Progress
+              index={index}
+              numQuestions={numQuestions}
+              points={points}
+              maxPossiblePoints={maxPossiblePoints}
+              answer={answer}
+            />
+            <Questions
+              question={questions[index]}
+              answer={answer}
+              dispatch={dispatch}
+            />
+            <NextButton dispatch={dispatch} answer={answer} />
+          </>
+        )}
       </MainPortion>
     </div>
   );
