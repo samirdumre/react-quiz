@@ -5,10 +5,10 @@ export default function FinishScreen({ points, maxPossiblePoints, highScore, dis
 
   let emoji;
   if (percentage === 100) emoji = "🏅";
-  if (percentage >= 80) emoji = "🥳";
-  if (percentage >= 60) emoji = "😀";
-  if (percentage >= 40) emoji = "😑";
-  if (percentage >= 0) emoji = "🤡";
+  else if (percentage >= 80) emoji = "🥳";
+  else if (percentage >= 60) emoji = "😀";
+  else if (percentage >= 40) emoji = "😑";
+  else if (percentage >= 0) emoji = "🤡";
   return (
     <>
       <p className="result">

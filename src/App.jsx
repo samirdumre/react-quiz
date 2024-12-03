@@ -12,8 +12,7 @@ import FinishScreen from "./components/FinishScreen";
 import Footer from "./components/Footer";
 import Timer from "./components/Timer";
 
-function App() {
-  const initialState = {
+ const initialState = {
     questions: questionsData.questions,
 
     // 'loading', 'error', 'ready', 'active', 'finished'
@@ -22,7 +21,12 @@ function App() {
     answer: null,
     points: 0,
     highScore: 0,
-  };
+    remainingTimeInSeconds: 10,
+ };
+ 
+const SECS_PER_QUESTION = 30;
+
+function App() {
 
   function reducer(state, action) {
     switch (action.type) {
@@ -41,6 +45,7 @@ function App() {
         return {
           ...state,
           status: "active",
+          remainingTimeInSeconds: state.questions.length * SECS_PER_QUESTION,
         };
       case "newAnswer":
         const question = state.questions.at(state.index);
@@ -50,7 +55,7 @@ function App() {
           answer: action.payload,
           points:
             action.payload === question.correctOption
-              ? state.points + 1
+              ? state.points + question.points
               : state.points,
         };
       case "nextQuestion":
@@ -71,12 +76,18 @@ function App() {
           ...initialState,
           highScore: state.highScore,
         };
+      case "tick":
+        return {
+          ...state,
+          remainingTimeInSeconds: state.remainingTimeInSeconds - 1,
+          status: state.remainingTimeInSeconds === 0 ? "finished" : state.status,
+        };
       default:
         throw new Error("Action unknown");
     }
   }
 
-  const [{ status, questions, index, answer, points, highScore }, dispatch] =
+  const [{ status, questions, index, answer, points, highScore, remainingTimeInSeconds }, dispatch] =
     useReducer(reducer, initialState);
 
   const numQuestions = questions.length;
@@ -130,7 +141,7 @@ function App() {
               dispatch={dispatch}
             />
             <Footer>
-              <Timer />
+              <Timer dispatch={dispatch} remainingTimeInSeconds={remainingTimeInSeconds} />
               <NextButton
                 dispatch={dispatch}
                 answer={answer}
