@@ -7,16 +7,21 @@ import MainPortion from "./components/MainPortion";
 import Questions from "./components/Questions";
 import NextButton from "./components/NextButton";
 import Progress from "./components/Progress";
+import questionsData from "./questions.json";
+import FinishScreen from "./components/FinishScreen";
+import Footer from "./components/Footer";
+import Timer from "./components/Timer";
 
 function App() {
   const initialState = {
-    questions: [],
+    questions: questionsData.questions,
 
     // 'loading', 'error', 'ready', 'active', 'finished'
-    status: "loading",
+    status: "ready",
     index: 0,
     answer: null,
     points: 0,
+    highScore: 0,
   };
 
   function reducer(state, action) {
@@ -54,15 +59,25 @@ function App() {
           index: state.index + 1,
           answer: null,
         };
+      case "finish":
+        return {
+          ...state,
+          status: "finished",
+          highScore:
+            state.points > state.highScore ? state.points : state.highScore,
+        };
+      case "restart":
+        return {
+          ...initialState,
+          highScore: state.highScore,
+        };
       default:
         throw new Error("Action unknown");
     }
   }
 
-  const [{ status, questions, index, answer, points }, dispatch] = useReducer(
-    reducer,
-    initialState
-  );
+  const [{ status, questions, index, answer, points, highScore }, dispatch] =
+    useReducer(reducer, initialState);
 
   const numQuestions = questions.length;
   const maxPossiblePoints = questions.reduce(
@@ -70,25 +85,27 @@ function App() {
     0
   );
 
-  useEffect(() => {
-    async function questionsFetch() {
-      try {
-        const res = await fetch(`http://localhost:9000/questions`);
-        if (!res.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data = await res.json();
-        dispatch({ type: "dataReceived", payload: data });
-      } catch (error) {
-        console.error("Error: ", error);
-        dispatch({ type: "dataFetchError" });
-      } finally {
-        console.log("Fetch attempt finished");
-      }
-    }
+  // For Fake API using localhost
 
-    questionsFetch();
-  }, []);
+  // useEffect(() => {
+  //   async function questionsFetch() {
+  //     try {
+  //       const res = await fetch(`http://localhost:9000/questions`);
+  //       if (!res.ok) {
+  //         throw new Error("Network response was not ok");
+  //       }
+  //       const data = await res.json();
+  //       dispatch({ type: "dataReceived", payload: data });
+  //     } catch (error) {
+  //       console.error("Error: ", error);
+  //       dispatch({ type: "dataFetchError" });
+  //     } finally {
+  //       console.log("Fetch attempt finished");
+  //     }
+  //   }
+  //   questionsFetch();
+  // }, []);
+
   return (
     <div className="app">
       <Header />
@@ -112,8 +129,24 @@ function App() {
               answer={answer}
               dispatch={dispatch}
             />
-            <NextButton dispatch={dispatch} answer={answer} />
+            <Footer>
+              <Timer />
+              <NextButton
+                dispatch={dispatch}
+                answer={answer}
+                index={index}
+                numQuestions={numQuestions}
+              />
+            </Footer>
           </>
+        )}
+        {status === "finished" && (
+          <FinishScreen
+            points={points}
+            maxPossiblePoints={maxPossiblePoints}
+            highScore={highScore}
+            dispatch={dispatch}
+          />
         )}
       </MainPortion>
     </div>
